@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
+import 'package:se_380_project/screens/home_screen.dart';
 
 class categoryScreen extends StatelessWidget {
   @override
@@ -39,7 +40,12 @@ class categoryScreen extends StatelessWidget {
               ),
             ),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => HomeScreen()));
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xffC8C8FF),
                 padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 80),
