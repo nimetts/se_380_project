@@ -1,19 +1,26 @@
-import 'dart:ui';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 
-class categoryScreen extends StatelessWidget {
+class CategoryScreen extends StatefulWidget {
+  @override
+  _CategoryScreenState createState() => _CategoryScreenState();
+}
+
+class _CategoryScreenState extends State<CategoryScreen> {
+
+  final Set<String> _selectedCategories = {};
+
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    int crossAxisCount = screenWidth > 600 ? 3 : 2;
+
     return Scaffold(
       backgroundColor: const Color(0xffE6E6FA),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Column(
           children: [
-            const SizedBox(height: 50),
+            const SizedBox(height: 60),
             const Text(
               "Which Categories best suit you?",
               textAlign: TextAlign.center,
@@ -26,36 +33,59 @@ class categoryScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 3,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                children: List.generate(categories.length, (index) {
-                  return CategoryTile(
-                    imageUrl: categories[index]['imageUrl']!,
-                    title: categories[index]['title']!,
+              child: GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: categories.length,
+                itemBuilder: (context, index) {
+                  final category = categories[index]['title']!;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (_selectedCategories.contains(category)) {
+                          _selectedCategories.remove(category);
+                        } else {
+                          _selectedCategories.add(category);
+                        }
+                      });
+                    },
+                    child: CategoryTile(
+                      imageUrl: categories[index]['imageUrl']!,
+                      title: category,
+                      isSelected: _selectedCategories.contains(category),
+                    ),
                   );
-                }),
+                },
               ),
             ),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xffC8C8FF),
-                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 80),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  // API or firebase to use the selected categories
+                  print("Selected Categories: $_selectedCategories");
+                  // Navigate to HomePage with the selected categories
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xffC8C8FF),
+                  padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 80),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
-              ),
-              child: const Text(
-                "Continue",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Color(0xff333333),
+                child: const Text(
+                  "Continue",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Color(0xff333333),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -66,8 +96,13 @@ class categoryScreen extends StatelessWidget {
 class CategoryTile extends StatelessWidget {
   final String imageUrl;
   final String title;
+  final bool isSelected;
 
-  const CategoryTile({required this.imageUrl, required this.title});
+  const CategoryTile({
+    required this.imageUrl,
+    required this.title,
+    required this.isSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +121,12 @@ class CategoryTile extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20.0),
             color: Colors.black.withOpacity(0.5),
+            border: isSelected
+                ? Border.all(
+              color: Colors.blueAccent,
+              width: 3.0,
+            )
+                : null,
           ),
         ),
         Center(
