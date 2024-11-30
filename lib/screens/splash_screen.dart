@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:se_380_project/screens/login_screen.dart';
+import 'package:se_380_project/screens/register_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -65,7 +67,14 @@ class _SplashScreenState extends State<SplashScreen> {
               }),
             ),
           ),
-        ],
+          TextButton(onPressed: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => LoginScreen()));
+          },
+            child: Text("Let\'s start"),
+          ),  ],
       ),
     );
   }
