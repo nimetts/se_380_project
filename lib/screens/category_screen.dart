@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'google_books_service.dart';
+import 'home_screen.dart';
+
 class CategoryScreen extends StatefulWidget {
   @override
   _CategoryScreenState createState() => _CategoryScreenState();
@@ -8,6 +11,8 @@ class CategoryScreen extends StatefulWidget {
 class _CategoryScreenState extends State<CategoryScreen> {
 
   final Set<String> _selectedCategories = {};
+  final GoogleBooksService _googleBooksService = GoogleBooksService();
+
 
   @override
   Widget build(BuildContext context) {
@@ -64,11 +69,19 @@ class _CategoryScreenState extends State<CategoryScreen> {
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: ElevatedButton(
-                onPressed: () {
-                  // API or firebase to use the selected categories
-                  print("Selected Categories: $_selectedCategories");
-                  // Navigate to HomePage with the selected categories
-                },
+                  onPressed: () async {
+                    Map<String, List<Map<String, dynamic>>> booksByCategory = {};
+                    for (String category in _selectedCategories) {
+                      booksByCategory[category] =
+                      await _googleBooksService.fetchBooksByCategory(category);
+                    }
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => HomeScreen(booksByCategory: booksByCategory),
+                        )
+                    );
+                  },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xffC8C8FF),
                   padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 80),

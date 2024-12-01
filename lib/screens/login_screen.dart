@@ -21,11 +21,11 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => categoryScreen()));
+          context, MaterialPageRoute(builder: (context) => CategoryScreen()));
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(
-          content: Text("login faild ")
+          content: Text("login failed ")
       ));
     }
   }
@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: _emailController,
                 decoration: InputDecoration(
-                  labelText: "Email Adress",
+                  labelText: "Email Address",
                   prefixIcon: Icon(Icons.email),
                   border: OutlineInputBorder(),
                 ),
@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     MaterialPageRoute(
                         builder: (context) => RegisterScreen()));
               },
-                  child: Text("Don\'t have an account? Sing Up"),
+                  child: Text("Don\'t have an account? Sign Up"),
               ),
             ],
           ),
