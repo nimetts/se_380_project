@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
+  final Map<String, List<Map<String, dynamic>>> booksByCategory;
+
+  HomeScreen({required this.booksByCategory});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -9,52 +13,71 @@ class HomeScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                labelText: "Search",
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16),
-            Text("Today\'s Highlight",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Container(
-              height: 150,
-              color: Colors.purple[100],
-              child: Center(
-                child: Text("highlight of the Day"),
-              ),
-            ),
-            SizedBox(height: 16),
-            Text("For you",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Expanded(child: GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3, childAspectRatio: 0.6,),
-              itemCount: 6,
-              itemBuilder: (context, index) {
-                return Card(
-                  child: Column(
-                    children: [
-                      Expanded(child: Image.asset(
-                        "assets/book_placeholder.png", fit: BoxFit.cover,),
-                      ),
-                      Text("Book title"),
-                    ],
+        child: booksByCategory.isEmpty
+            ? Center(
+          child: Text(
+            "No books found. Please select some categories.",
+            style: TextStyle(fontSize: 16),
+          ),
+        )
+            : ListView(
+          children: booksByCategory.entries.map((entry) {
+            final category = entry.key;
+            final books = entry.value;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
                   ),
-                );
-              },
-            ),
-            ),
-          ],
+                ),
+                SizedBox(height: 8),
+                SizedBox(
+                  height: 200,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: books.length,
+                    itemBuilder: (context, index) {
+                      final book = books[index];
+                      return Container(
+                        width: 120,
+                        margin: EdgeInsets.only(right: 10),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: book['thumbnail'] != null
+                                  ? Image.network(
+                                book['thumbnail'],
+                                fit: BoxFit.cover,
+                              )
+                                  : Image.asset(
+                                "assets/book_placeholder.png",
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              book['title'] ?? 'No Title',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: 16), // spacing between categories
+              ],
+            );
+          }).toList(),
         ),
       ),
     );
