@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class GoogleBooksService {
+  final String apiKey = 'AIzaSyALaf-OWZNNYcmem0yWLjPLIjtUOi5QNAg'; // our key!!
   final String apiKey = 'AIzaSyALaf-OWZNNYcmem0yWLjPLIjtUOi5QNAg'; // Google Books API key
   final String _baseUrl = 'https://www.googleapis.com/books/v1/volumes';
   Future<List<Map<String, dynamic>>> fetchBooksByQuery(String query) async {
@@ -46,6 +47,7 @@ class GoogleBooksService {
         };
       }).toList();
     } else {
+      throw Exception('Failed to load books');
       throw Exception('Failed to load books for category $category');
     }
   }
