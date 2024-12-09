@@ -1,4 +1,4 @@
-package com.example.se_380_project;
+package com.booktracker.app;
 
 import io.flutter.embedding.android.FlutterActivity;
 
