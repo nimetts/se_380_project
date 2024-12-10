@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:se_380_project/screens/category_screen.dart';
+import 'package:se_380_project/screens/home_screen.dart';
 import 'package:se_380_project/screens/welcome_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 
