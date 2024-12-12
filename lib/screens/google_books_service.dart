@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 class GoogleBooksService {
   final String apiKey = 'AIzaSyALaf-OWZNNYcmem0yWLjPLIjtUOi5QNAg'; // our key!!
   final String _baseUrl = 'https://www.googleapis.com/books/v1/volumes';
+
   Future<List<Map<String, dynamic>>> fetchBooksByQuery(String query) async {
     final url =
         'https://www.googleapis.com/books/v1/volumes?q=$query&key=$apiKey';
@@ -17,6 +18,7 @@ class GoogleBooksService {
           'title': book['volumeInfo']['title'] ?? 'No Title',
           'authors': book['volumeInfo']['authors']?.join(', ') ?? 'Unknown Author',
           'thumbnail': book['volumeInfo']['imageLinks']?['thumbnail'] ?? '',
+          'description': book['volumeInfo']['description'] ?? 'No description available',
         };
       }).toList();
     } else {
@@ -43,10 +45,10 @@ class GoogleBooksService {
           'title': book['volumeInfo']['title'] ?? 'No Title',
           'authors': book['volumeInfo']['authors']?.join(', ') ?? 'Unknown Author',
           'thumbnail': book['volumeInfo']['imageLinks']?['thumbnail'] ?? '',
+          'description': book['volumeInfo']['description'] ?? 'No description available',
         };
       }).toList();
     } else {
-      throw Exception('Failed to load books');
       throw Exception('Failed to load books for category $category');
     }
   }
@@ -66,6 +68,7 @@ class GoogleBooksService {
         final thumbnail = volumeInfo['imageLinks']?['thumbnail'] ?? '';
         final ratingsCount = item['volumeInfo']['ratingsCount'] ?? 0;
         final averageRating = item['volumeInfo']['averageRating'] ?? 0.0;
+        final description = volumeInfo['description'] ?? 'No description available';
 
         books.add({
           'title': title,
@@ -73,6 +76,7 @@ class GoogleBooksService {
           'thumbnail': thumbnail,
           'ratingsCount': ratingsCount,
           'averageRating': averageRating,
+          'description': description,
         });
       }
 

@@ -23,58 +23,75 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFE6E6FA),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: _onPageChanged,
-              children: [
-                _buildPage(
-                  title: 'Discover Books that\n Speak to You',
-                  imagePath: 'lib/assets/wizard.png',
-                  description:
-                  'Let your next great read find you. Get personalized recommendations based on your favorite genres and moods.',
+          Column(
+            children: [
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  children: [
+                    _buildPage(
+                      title: 'Discover Books that\n Speak to You',
+                      imagePath: 'lib/assets/wizard.png',
+                      description:
+                      'Let your next great read find you. Get personalized recommendations based on your favorite genres and moods.',
+                    ),
+                    _buildPage(
+                      title: 'Start Reading\n Anytime, Anywhere',
+                      imagePath: 'lib/assets/reading2.png',
+                      description:
+                      'Read on the go with our built-in reader. Adjust fonts, colors, and settings to make your reading experience perfect for you.',
+                    ),
+                    _buildPage(
+                      title: 'Build Your Own\n Bookshelf',
+                      imagePath: 'lib/assets/bookshelf.png',
+                      description:
+                      'Curate your personal bookshelf. Save books you love, track your progress, and keep your library organized.',
+                    ),
+                  ],
                 ),
-                _buildPage(
-                  title: 'Start Reading\n Anytime, Anywhere',
-                  imagePath: 'lib/assets/reading2.png',
-                  description:
-                  'Read on the go with our built-in reader. Adjust fonts, colors, and settings to make your reading experience perfect for you.',
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (index) {
+                    return Container(
+                      margin: EdgeInsets.symmetric(horizontal: 4),
+                      child: CircleAvatar(
+                        radius: 5,
+                        backgroundColor:
+                        _currentPage == index ? Colors.black : Colors.grey,
+                      ),
+                    );
+                  }),
                 ),
-                _buildPage(
-                  title: 'Build Your Own\n Bookshelf',
-                  imagePath: 'lib/assets/bookshelf.png',
-                  description:
-                  'Curate your personal bookshelf. Save books you love, track your progress, and keep your library organized.',
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (index) {
-                return Container(
-                  margin: EdgeInsets.symmetric(horizontal: 4),
-                  child: CircleAvatar(
-                    radius: 5,
-                    backgroundColor:
-                    _currentPage == index ? Colors.black : Colors.grey,
-                  ),
-                );
-              }),
+
+
+          if (_currentPage == 2)
+            Positioned(
+              bottom: 20,
+              right: 20,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
+                },
+                child: Icon(Icons.arrow_forward, color: Color(0xff333333)),
+                style: ElevatedButton.styleFrom(
+                  shape: CircleBorder(), backgroundColor: Color(0xffC8C8FF),
+                  padding: EdgeInsets.all(16),
+                ),
+              ),
             ),
-          ),
-          TextButton(onPressed: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => LoginScreen()));
-          },
-            child: Text("Let\'s start"),
-          ),  ],
+        ],
       ),
     );
   }
@@ -96,12 +113,12 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
           textAlign: TextAlign.center,
         ),
-        SizedBox(height: 40),
+        SizedBox(height: 80),
         Image.asset(
           imagePath,
           height: 250,
         ),
-        SizedBox(height: 40),
+        SizedBox(height: 80),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Text(
@@ -113,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen> {
             textAlign: TextAlign.center,
           ),
         ),
-        SizedBox(height: 50),
+        SizedBox(height: 40),
       ],
     );
   }

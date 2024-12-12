@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:se_380_project/screens/library_screen.dart';
+import 'package:se_380_project/screens/profile_screen.dart';
+import 'favorites_screen.dart';
 import 'google_books_service.dart';
 import 'search_results_screen.dart';
-import 'book_details_screen.dart'; // Import the BookDetailsScreen
-
+import 'book_details_screen.dart';
 class HighlightWidget extends StatelessWidget {
   final Map<String, dynamic> book;
 
@@ -49,16 +51,72 @@ class HighlightWidget extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+
+
+class HomeScreen extends StatefulWidget {
   final Map<String, List<Map<String, dynamic>>> booksByCategory;
 
   HomeScreen({required this.booksByCategory});
 
   @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+
+
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      _OriginalHomeScreen(booksByCategory: widget.booksByCategory),
+      LibraryScreen(),
+      FavoritesScreen(),
+      ProfileScreen(),
+    ];
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Color(0xff8C7BB7),
+        selectedItemColor: Colors.purple,
+        unselectedItemColor: Colors.black45,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Library'),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorites'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+      ),
+    );
+  }
+}
+
+
+class _OriginalHomeScreen extends StatelessWidget {
+  final Map<String, List<Map<String, dynamic>>> booksByCategory;
+
+  _OriginalHomeScreen({required this.booksByCategory});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xffE6E6FA),
       appBar: AppBar(
-        backgroundColor: Colors.purple[300],
+        backgroundColor: Color(0xff8C7BB7),
         elevation: 0,
         toolbarHeight: 80,
         title: Padding(
@@ -130,10 +188,19 @@ class HomeScreen extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   children: booksByCategory.entries.expand((entry) {
                     return entry.value.map((book) {
-                      // Kitaplar tıklanamaz hale getirildi
-                      return BookCard(
-                        imageUrl: book['thumbnail'] ?? '',
-                        title: book['title'] ?? 'Untitled',
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BookDetailsScreen(book: book),
+                            ),
+                          );
+                        },
+                        child: BookCard(
+                          imageUrl: book['thumbnail'] ?? '',
+                          title: book['title'] ?? 'Untitled',
+                        ),
                       );
                     }).toList();
                   }).toList(),
@@ -187,18 +254,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.purple[300],
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.black45,
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Library'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorites'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
     );
   }
 }
@@ -227,10 +282,15 @@ class BookCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 5),
-          Text(
-            title,
-            style: TextStyle(fontSize: 14),
-            textAlign: TextAlign.center,
+          Container(
+            width: 100,
+            child: Text(
+              title,
+              style: TextStyle(fontSize: 14),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
