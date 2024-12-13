@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:se_380_project/screens/category_screen.dart';
+import 'package:se_380_project/screens/favorites_manager.dart';
 import 'package:se_380_project/screens/home_screen.dart';
 import 'package:se_380_project/screens/welcome_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -7,6 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await FavoritesManager().fetchFavorites();
   runApp(MyApp());
 }
 
