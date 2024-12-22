@@ -69,19 +69,19 @@ class _CategoryScreenState extends State<CategoryScreen> {
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: ElevatedButton(
-                  onPressed: () async {
-                    Map<String, List<Map<String, dynamic>>> booksByCategory = {};
-                    for (String category in _selectedCategories) {
-                      booksByCategory[category] =
-                      await _googleBooksService.fetchBooksByCategory(category);
-                    }
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => HomeScreen(booksByCategory: booksByCategory),
-                        )
-                    );
-                  },
+                onPressed: () async {
+                  Map<String, List<Map<String, dynamic>>> booksByCategory = {};
+                  for (String category in _selectedCategories) {
+                    booksByCategory[category] =
+                    await _googleBooksService.fetchBooksByCategory(category);
+                  }
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HomeScreen(booksByCategory: booksByCategory),
+                      )
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xffC8C8FF),
                   padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 80),
