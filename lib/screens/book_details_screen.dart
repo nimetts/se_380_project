@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'favorites_manager.dart';
-
+import 'book_search_screen.dart';
 
 class BookDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> book;
@@ -32,7 +32,7 @@ class BookDetailsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Book Image
+              // Kitap görseli
               Center(
                 child: Container(
                   height: 250,
@@ -58,7 +58,7 @@ class BookDetailsScreen extends StatelessWidget {
               ),
               SizedBox(height: 20),
 
-              // Book Title
+              // Kitap başlığı
               Text(
                 book['title'] ?? 'No title available',
                 style: TextStyle(
@@ -70,14 +70,14 @@ class BookDetailsScreen extends StatelessWidget {
               ),
               SizedBox(height: 10),
 
-              // Author(s)
+              // Yazar bilgisi
               Text(
                 'Author(s): ${_getAuthors(book['authors'])}',
                 style: TextStyle(fontSize: 20, color: Colors.grey[700]),
               ),
               SizedBox(height: 20),
 
-              // Ratings
+              // Puanlama
               Row(
                 children: [
                   Icon(Icons.star, color: Colors.amber, size: 20),
@@ -98,7 +98,7 @@ class BookDetailsScreen extends StatelessWidget {
               ),
               SizedBox(height: 20),
 
-              // Synopsis
+              // Özet
               Text(
                 'Synopsis: ',
                 style: TextStyle(
@@ -114,6 +114,7 @@ class BookDetailsScreen extends StatelessWidget {
               ),
               SizedBox(height: 30),
 
+              // Favorilere ekleme/çıkarma butonu
               Center(
                 child: ElevatedButton.icon(
                   onPressed: () {
@@ -137,6 +138,27 @@ class BookDetailsScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              SizedBox(height: 20),
+
+              // Yeni eklenen buton
+
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => BookSearchScreen()),
+                    );
+                  },
+                  icon: Icon(Icons.search, color: Colors.white),
+                  label: Text('Go to Book Search'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xffC8C8FF),
+                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                  ),
+                ),
+              ),
+
             ],
           ),
         ),
