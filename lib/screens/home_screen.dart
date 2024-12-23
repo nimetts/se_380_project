@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:se_380_project/screens/analytics_page.dart';
 import 'package:se_380_project/screens/library_screen.dart';
-import 'package:se_380_project/screens/profile_screen.dart';
 import 'favorites_screen.dart';
 import 'google_books_service.dart';
 import 'search_results_screen.dart';
 import 'book_details_screen.dart';
+
 class HighlightWidget extends StatelessWidget {
   final Map<String, dynamic> book;
 
@@ -51,8 +53,6 @@ class HighlightWidget extends StatelessWidget {
   }
 }
 
-
-
 class HomeScreen extends StatefulWidget {
   final Map<String, List<Map<String, dynamic>>> booksByCategory;
 
@@ -65,7 +65,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-
   late final List<Widget> _screens;
 
   @override
@@ -75,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _OriginalHomeScreen(booksByCategory: widget.booksByCategory),
       LibraryScreen(),
       FavoritesScreen(),
-      ProfileScreen(),
+      AnalyticsPage()
     ];
   }
 
@@ -97,14 +96,14 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Library'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorites'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.favorite), label: 'Favorites'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );
   }
 }
-
 
 class _OriginalHomeScreen extends StatelessWidget {
   final Map<String, List<Map<String, dynamic>>> booksByCategory;
@@ -193,7 +192,8 @@ class _OriginalHomeScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => BookDetailsScreen(book: book),
+                              builder: (context) =>
+                                  BookDetailsScreen(book: book),
                             ),
                           );
                         },
@@ -235,7 +235,8 @@ class _OriginalHomeScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => BookDetailsScreen(book: book),
+                                  builder: (context) =>
+                                      BookDetailsScreen(book: book),
                                 ),
                               );
                             },

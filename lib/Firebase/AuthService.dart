@@ -5,37 +5,55 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<User?> login(String email, String password) async {
+  static Map<String, dynamic> userStats = {};
+
+  Future<UserCredential?> login(String email, String password) async {
     try {
-      print(email + password);
       final UserCredential userCredential = await _auth
           .signInWithEmailAndPassword(email: email, password: password);
-      return userCredential.user;
+      return userCredential;
     } catch (e) {
-      print("here");
-      throw Exception('login failed');
+      throw Exception('Login failed');
     }
   }
 
   Future<void> addUserStatsToFirestore(User user) async {
-    final userDoc = await _firestore.collection('bookStats').doc(user.uid).set({
-      'bestStreak': 0,
-      'currentStreak': 0,
-      'finishedBooks': 0,
-      'readingProgress': 0,
-      'readingStats': [
-        {
-          'day': '2024-12-01',
-          'page': 0,
-          'readingTime': 0,
-        },
-        {
-          'day': '2024-12-02',
-          'page': 0,
-          'readingTime': 0,
-        },
-      ],
-    });
+    final docRef = _firestore.collection('bookStats').doc(user.uid);
+    final docSnapshot = await docRef.get();
+
+    if (!docSnapshot.exists) {
+      await docRef.set({
+        'bestStreak': 0,
+        'currentStreak': 0,
+        'finishedBooks': 0,
+        'readingProgress': 0,
+        'readingStats': [
+          {
+            'day': '2024-12-01',
+            'page': 0,
+            'readingTime': 0,
+          },
+          {
+            'day': '2024-12-02',
+            'page': 0,
+            'readingTime': 0,
+          },
+        ],
+      });
+    }
+  }
+
+  Future<void> fetchUserStatsFromFirestore(User user) async {
+    final docRef = _firestore.collection('bookStats').doc(user.uid);
+    final docSnapshot = await docRef.get();
+
+    if (docSnapshot.exists) {
+      userStats = docSnapshot.data() ?? {};
+      print("User fetched: $userStats");
+    } else {
+      print("No stats ");
+      userStats = {};
+    }
   }
 
   Future<void> signOut() async {

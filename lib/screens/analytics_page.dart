@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:se_380_project/Helper/reading_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+
+import '../Firebase/AuthService.dart';
 
 class AnalyticsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final readingProvider = Provider.of<ReadingProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Analytics'),
+        title: const Text('Analytics'),
         backgroundColor: Colors.deepPurple,
       ),
       body: SingleChildScrollView(
@@ -19,66 +18,44 @@ class AnalyticsPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(readingProvider),
+              _buildHeader(),
               SizedBox(height: 16),
-              _buildReadingProgress(readingProvider),
+              _buildReadingProgress(),
               SizedBox(height: 16),
-              _buildWeeklyReadingChart(readingProvider),
+              _buildWeeklyReadingChart(),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const<BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.analytics),
-            label: 'Analytics',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],selectedItemColor: Colors.deepPurple,
-        unselectedItemColor: Colors.grey,
-        currentIndex: 1,
-        onTap: (index){
-          if(index==0){
-            Navigator.pushNamed(context, '/home');
-          }else  if(index==2){
-            Navigator.pushNamed(context, '/settings');
-          }
-        },
-      ),
     );
   }
 
-  Widget _buildHeader(ReadingProvider readingProvider) {
+  Widget _buildHeader() {
     return Container(
       padding: EdgeInsets.all(16),
-      color: Colors.deepPurple[100],
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.deepPurple[100]
+      ),
       child: Column(
         children:[
           Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildStatCard(Icons.local_fire_department, 'Current streak',
-                    readingProvider.currentStreak, Colors.red),
+                    AuthService.userStats["currentStreak"], Colors.red),
                 _buildStatCard(Icons.emoji_events, 'Best streak',
-                    readingProvider.bestStreak, Colors.deepOrange),
+                    AuthService.userStats["bestStreak"], Colors.deepOrange),
               ],
           ),
           SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatCard(Icons.book, 'Finished', readingProvider.finishedBooks,
+              _buildStatCard(Icons.book, 'Finished', AuthService.userStats["finishedBooks"],
                   Colors.deepPurpleAccent),
               _buildStatCard(Icons.timer, 'Reading time',
-                  readingProvider.readingTime, Colors.blue),
+                  0, Colors.blue),
             ],
           ),
         ],
@@ -93,7 +70,7 @@ class AnalyticsPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black26,
             blurRadius: 4,
@@ -105,23 +82,23 @@ class AnalyticsPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: color, size: 28),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(label,
-              style: TextStyle(fontSize: 12, color: Colors.black54)),
+              style: const TextStyle(fontSize: 12, color: Colors.black54)),
           SizedBox(height: 4),
           Text(value.toString(),
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
-  Widget _buildReadingProgress(ReadingProvider readingProvider) {
+  Widget _buildReadingProgress() {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.deepPurple[50],
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.deepPurple,
             blurRadius: 4,
@@ -132,22 +109,22 @@ class AnalyticsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Reading Progress', style: TextStyle(fontSize: 18)),
-          SizedBox(height: 16),
+          const Text('Reading Progress', style: TextStyle(fontSize: 18)),
+          const SizedBox(height: 16),
           LinearProgressIndicator(
-            value: readingProvider.readingProgress / 100,
+            value: AuthService.userStats["readingProgress"] / 100,
             backgroundColor: Colors.grey[300],
             color: Colors.deepPurple,
           ),
-          SizedBox(height: 8),
-          Text('${readingProvider.readingProgress.toStringAsFixed(2)}% completed'),
+          const SizedBox(height: 8),
+          Text('${AuthService.userStats["currentStreak"].toStringAsFixed(2)}% completed'),
         ],
       ),
     );
   }
 
 
-  Widget _buildWeeklyReadingChart(ReadingProvider readingProvider) {
+  Widget _buildWeeklyReadingChart() {
     final gradientColors = [
       Colors.deepPurple,
       Colors.deepPurple.withOpacity(0.5),
@@ -197,8 +174,10 @@ class AnalyticsPage extends StatelessWidget {
                 maxY: 10,
                 lineBarsData: [
                   LineChartBarData(
-                    spots: readingProvider.weeklyReadingStats.map((stat) {
-                      return FlSpot(stat['day'].toDouble(), stat['hours'].toDouble());
+                    spots: AuthService.userStats["readingStats"].map<FlSpot>((stat) {
+                      final day = double.tryParse(stat['day'].toString()) ?? 0.0;
+                      final hours = double.tryParse(stat['hours'].toString()) ?? 0.0;
+                      return FlSpot(day, hours);
                     }).toList(),
                     isCurved: true,
                     color: Colors.greenAccent,
