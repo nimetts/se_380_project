@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:se_380_project/screens/data_entry_page.dart';
 import '../Firebase/AuthService.dart';
 
 class AnalyticsPage extends StatefulWidget {
@@ -13,8 +12,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   final _firestore = FirebaseFirestore.instance;
   final AuthService _authService = AuthService();
   List<Map<String, dynamic>> _favoriteBooks = [];
+  Map<String, int> totalPagesByDay = {};
   int _currentBookIndex = 0;
-  int a = 0;
+  int _totalTimeSpent = 0;
+  int _finishedBookCount = 0;
 
   @override
   void initState() {
@@ -25,17 +26,60 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Future<void> _loadBooksFromFirestore() async {
     User? user = _authService.currentUser;
     if (user != null) {
-      QuerySnapshot snapshot = await _firestore
-          .collection('bookStats')
-          .doc(user.uid)
-          .collection('books')
-          .get();
+      try {
+        QuerySnapshot snapshot = await _firestore
+            .collection('bookStats')
+            .doc(user.uid)
+            .collection('books')
+            .get();
 
-      setState(() {
-        _favoriteBooks = snapshot.docs
+        // Parse books from Firestore
+        List<Map<String, dynamic>> books = snapshot.docs
             .map((doc) => doc.data() as Map<String, dynamic>)
             .toList();
-      });
+
+        // Initialize a map to hold pages read by day
+        Map<String, int> pagesByDay = {};
+
+        for (var book in books) {
+          var weeklyStats = book['weeklyStats'];
+          if (weeklyStats is Map<String, dynamic>) {
+            weeklyStats.forEach((day, stats) {
+              if (stats is Map<String, dynamic> && stats['page'] != null) {
+                int pageCount =
+                    (stats['page'] as num).toInt(); // Force conversion to int
+
+                pagesByDay.update(
+                  day,
+                  (existingPages) => existingPages + pageCount,
+                  ifAbsent: () => pageCount,
+                );
+              }
+            });
+          }
+        }
+
+        // Update state with the processed data
+        setState(() {
+          _favoriteBooks = books;
+          totalPagesByDay = pagesByDay;
+
+          _totalTimeSpent = books.fold(
+            0,
+            (sum, book) => sum + ((book['timeSpent'] ?? 0) as num).toInt(),
+          );
+
+          _finishedBookCount = books.fold(
+            0,
+            (count, book) => count + (book['finished'] == true ? 1 : 0),
+          );
+
+          print('Total Pages by Day: $totalPagesByDay');
+        });
+      } catch (e) {
+        // Log the error for debugging
+        print('Error loading books: $e');
+      }
     }
   }
 
@@ -47,13 +91,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           title: const Text('Analytics'),
           backgroundColor: Colors.deepPurple,
         ),
-        body: Center(child: Text('No favorite books found.')),
+        body: Center(
+            child: Text(
+                'Could not find any book realted data, did you add it from library tab first?')),
       );
     }
-
-    final currentBook = _favoriteBooks[_currentBookIndex];
-    final bookTitle = currentBook['title'] ?? 'Unknown Title';
-    final bookThumbnail = currentBook['thumbnail'] ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -67,9 +109,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(),
-              SizedBox(height: 16),
-              _buildReadingProgress(bookTitle, bookThumbnail),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
+              _buildReadingProgress(),
+              const SizedBox(height: 16),
               _buildWeeklyReadingChart(),
             ],
           ),
@@ -80,32 +122,46 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.deepPurple[100]),
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.deepPurple[100],
+      ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatCard(Icons.local_fire_department, 'Current streak',
-                  AuthService.userStats["currentStreak"] ?? 0, Colors.red),
-              _buildStatCard(Icons.emoji_events, 'Best streak',
-                  AuthService.userStats["bestStreak"] ?? 0, Colors.deepOrange),
+              _buildStatCard(
+                Icons.local_fire_department,
+                'Current streak',
+                AuthService.userStats["currentStreak"] ?? 0,
+                Colors.red,
+              ),
+              _buildStatCard(
+                Icons.emoji_events,
+                'Best streak',
+                AuthService.userStats["bestStreak"] ?? 0,
+                Colors.deepOrange,
+              ),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildStatCard(
-                  Icons.book,
-                  'Finished',
-                 a,
-                  Colors.deepPurpleAccent),
-              _buildStatCard(Icons.timer, 'Reading time',
-                  DataEntryPage().hourSpent, Colors.blue),
+                Icons.book,
+                'Finished',
+                _finishedBookCount,
+                Colors.deepPurpleAccent,
+              ),
+              _buildStatCard(
+                Icons.timer,
+                'Reading time',
+                _totalTimeSpent,
+                Colors.blue,
+              ),
             ],
           ),
         ],
@@ -135,21 +191,19 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           const SizedBox(height: 8),
           Text(label,
               style: const TextStyle(fontSize: 12, color: Colors.black54)),
-          SizedBox(height: 4),
-          Text(value.toString(),
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(
+            value.toString(),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildReadingProgress(String bookTitle, String bookThumbnail) {
+  Widget _buildReadingProgress() {
     final currentBook = _favoriteBooks[_currentBookIndex];
     double readingProgress = (currentBook["readingProgress"] ?? 0).toDouble();
-    if (readingProgress > 100 || readingProgress == 100) {
-      a++;
-    }
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -173,7 +227,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  bookTitle,
+                  _favoriteBooks[_currentBookIndex]['title'],
                   style: TextStyle(fontSize: 16),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -227,20 +281,37 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
-  Widget _buildWeeklyReadingChart() {
-    Map<String, List<Map<String, dynamic>>> dailyBooks = {};
+  // -- MAPPING HELPERS --
+  // We'll assume Firestore keys are "Monday","Tuesday", etc.
+  // This function gives us the correct Firestore key based on index.
+  String _getFirestoreDayKey(int index) {
+    // Adjust if your data uses different day names or starts on Sunday, etc.
+    List<String> days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
+    return days[index % days.length];
+  }
 
-    // Organize books by the day they were read
-    for (var book in _favoriteBooks) {
-      String readDay = book["readDay"] ?? '';
-      if (!dailyBooks.containsKey(readDay)) {
-        dailyBooks[readDay] = [];
-      }
-      dailyBooks[readDay]!.add(book);
-    }
+  // This function is just for displaying a short label in the chart.
+  String _getDayInitial(int index) {
+    List<String> initials = ["M", "T", "W", "T", "F", "S", "S"];
+    return initials[index % initials.length];
+  }
+
+  Widget _buildWeeklyReadingChart() {
+    // Find the maximum pages read on any day (to scale the bars)
+    final maxPages = totalPagesByDay.values.isEmpty
+        ? 1
+        : totalPagesByDay.values.reduce((a, b) => a > b ? a : b);
 
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.deepPurple[50],
         borderRadius: BorderRadius.circular(12),
@@ -248,7 +319,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           BoxShadow(
             color: Colors.deepPurple.withOpacity(0.5),
             blurRadius: 4,
-            offset: Offset(2, 2),
+            offset: const Offset(2, 2),
           ),
         ],
       ),
@@ -256,54 +327,53 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Weekly Reading Chart', style: TextStyle(fontSize: 18)),
+          const SizedBox(height: 16),
           SizedBox(
             height: 200,
             child: Row(
               children: List.generate(7, (dayIndex) {
-                String day = _getDayInitial(dayIndex);
-                List<Map<String, dynamic>> booksOnThisDay =
-                    dailyBooks[day] ?? [];
+                // Get the Firestore key for this day index
+                String firestoreKey = _getFirestoreDayKey(dayIndex);
 
-                double totalProgress = 0;
-                int booksReadOnThisDay = booksOnThisDay.length;
+                // Retrieve the pages read from the mapped data
+                int pagesReadOnThisDay = totalPagesByDay[firestoreKey] ?? 0;
 
-                // Calculate total progress for the day
-                for (var book in booksOnThisDay) {
-                  double progress = (book["readingProgress"] ?? 0).toDouble();
-                  totalProgress += progress;
-                }
+                // Scale it based on the max pages found
+                double progressFactor =
+                    (pagesReadOnThisDay / maxPages).clamp(0.0, 1.0);
 
-                double averageProgress = booksReadOnThisDay > 0
-                    ? totalProgress / booksReadOnThisDay
-                    : 0;
+                // We can use a short label ("M", "T", "W", etc.) to display
+                String dayLabel = _getDayInitial(dayIndex);
 
                 return Expanded(
-                  child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 4),
-                    height: 20,
-                    color: _getColorForDay(dayIndex),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: averageProgress / 100,
-                      child: Center(
-                        child: Text(
-                          day,
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // This is the bar column
+                      Container(
+                        width: 20,
+                        height: 150 * progressFactor, // scale up to 150 px
+                        color: _getColorForDay(dayIndex),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      // This is the day label (e.g. "M", "T", etc.)
+                      Text(
+                        dayLabel,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
                 );
               }),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
+          // Legend / breakdown
           Column(
             children: List.generate(7, (dayIndex) {
-              String day = _getDayInitial(dayIndex);
-              List<Map<String, dynamic>> booksOnThisDay = dailyBooks[day] ?? [];
-              int booksReadOnThisDay = booksOnThisDay.length;
+              String firestoreKey = _getFirestoreDayKey(dayIndex);
+              String dayLabel = _getDayInitial(dayIndex);
+              int pagesReadOnThisDay = totalPagesByDay[firestoreKey] ?? 0;
 
               return Row(
                 children: [
@@ -312,12 +382,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     height: 20,
                     color: _getColorForDay(dayIndex),
                   ),
-                  SizedBox(width: 8),
-                  Text(day, style: TextStyle(fontSize: 14)),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
+                  Text(dayLabel, style: const TextStyle(fontSize: 14)),
+                  const SizedBox(width: 8),
                   Text(
-                    '$booksReadOnThisDay books',
-                    style: TextStyle(fontSize: 14),
+                    '$pagesReadOnThisDay pages',
+                    style: const TextStyle(fontSize: 14),
                   ),
                 ],
               );
@@ -339,11 +409,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       Colors.purple,
     ];
     return colors[index % colors.length];
-  }
-
-  String _getDayInitial(int index) {
-    List<String> days = ["M", "T", "W", "T", "F", "S", "S"];
-    return days[index % days.length];
   }
 
   Future<void> _updateBookProgress(

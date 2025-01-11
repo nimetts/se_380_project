@@ -19,6 +19,7 @@ class GoogleBooksService {
           'authors': book['volumeInfo']['authors']?.join(', ') ?? 'Unknown Author',
           'thumbnail': book['volumeInfo']['imageLinks']?['thumbnail'] ?? '',
           'description': book['volumeInfo']['description'] ?? 'No description available',
+          'pageCount': book['volumeInfo']['pageCount'] ?? 100
         };
       }).toList();
     } else {
@@ -46,6 +47,7 @@ class GoogleBooksService {
           'authors': book['volumeInfo']['authors']?.join(', ') ?? 'Unknown Author',
           'thumbnail': book['volumeInfo']['imageLinks']?['thumbnail'] ?? '',
           'description': book['volumeInfo']['description'] ?? 'No description available',
+          'pageCount': book['volumeInfo']['pageCount'] ?? 100
         };
       }).toList();
     } else {
@@ -68,6 +70,7 @@ class GoogleBooksService {
         final thumbnail = volumeInfo['imageLinks']?['thumbnail'] ?? '';
         final ratingsCount = item['volumeInfo']['ratingsCount'] ?? 0;
         final averageRating = item['volumeInfo']['averageRating'] ?? 0.0;
+        final pageCount = item['volumeInfo']['pageCount'] ?? 100;
         final description = volumeInfo['description'] ?? 'No description available';
 
         books.add({
@@ -77,6 +80,7 @@ class GoogleBooksService {
           'ratingsCount': ratingsCount,
           'averageRating': averageRating,
           'description': description,
+          'pageCount': pageCount
         });
       }
 

@@ -17,6 +17,7 @@ class _DataEntryPageState extends State<DataEntryPage> {
 
   String? _selectedBook;
   String? _selectedBookImage;
+  int? _selectedBookPageCount;
   List<Map<String, dynamic>> _favoriteBooks = [];
   bool _isBookListVisible = false;
 
@@ -35,9 +36,10 @@ class _DataEntryPageState extends State<DataEntryPage> {
       _favoriteBooks = FavoritesManager().getFavorites();
       if (_favoriteBooks.isNotEmpty) {
         _selectedBook =
-            _favoriteBooks[0]['title']; // Default to the first favorite
+            _favoriteBooks[0]['title'];
         _selectedBookImage =
-            _favoriteBooks[0]['thumbnail']; // Set the default image
+            _favoriteBooks[0]['thumbnail'];
+        _selectedBookPageCount = _favoriteBooks[0]['pageCount'];// Set the default image
       }
     });
   }
@@ -133,15 +135,7 @@ class _DataEntryPageState extends State<DataEntryPage> {
                 keyboardType: TextInputType.number,
               ),
               SizedBox(height: 16),
-              TextField(
-                controller: _totalPagesController,
-                decoration: InputDecoration(
-                  labelText: 'Total Pages in Book',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 16),
+
 
               // Dropdown for selecting the day of the week
               DropdownButton<String>(
@@ -200,12 +194,8 @@ class _DataEntryPageState extends State<DataEntryPage> {
 
     int pagesRead = int.tryParse(_pagesController.text) ?? 0;
     int timeSpentInMinutes = int.tryParse(_timeController.text) ?? 0;
-    int totalPages = int.tryParse(_totalPagesController.text) ?? 0;
+    int totalPages = _selectedBookPageCount ?? 1;
 
-    double readingProgress = (pagesRead / totalPages) * 100;
-
-    // Calculate hours spent from minutes
-    int hourSpent = (timeSpentInMinutes / 60).floor();
 
     final AuthService _authService = AuthService();
     User? user = _authService.currentUser;
@@ -216,22 +206,50 @@ class _DataEntryPageState extends State<DataEntryPage> {
       final booksRef = docRef.collection('books');
 
       final bookDoc = await booksRef.doc(_selectedBook).get();
+      Map<String, dynamic> weeklyStats = bookDoc.data()?['weeklyStats'] ?? {};
+
+      weeklyStats[_selectedDayOfWeek!] =  {
+        "time" : timeSpentInMinutes,
+        "page" :pagesRead
+      };
+
+      int pagesReadUpUntilNow = 0;
+
+      weeklyStats.forEach((key, value) {
+        if (value is Map<String, dynamic> && value['page'] != null) {
+          pagesReadUpUntilNow += value['page'] as int;
+        }
+      });
+
+      int totalTimeSpent = 0;
+
+      weeklyStats.forEach((key, value) {
+        if (value is Map<String, dynamic> && value['time'] != null) {
+          totalTimeSpent += value['time'] as int;
+        }
+      });
+
+      double readingProgress = (pagesReadUpUntilNow / totalPages) * 100;
+      bool finish = pagesReadUpUntilNow == totalPages;
 
       if (bookDoc.exists) {
         await booksRef.doc(_selectedBook).update({
           'readingProgress': readingProgress,
-          'dayOfWeek': _selectedDayOfWeek,
-          'pagesRead': pagesRead,
-          'timeSpent': FieldValue.increment(timeSpentInMinutes),
-          'hourSpent': FieldValue.increment(hourSpent),
+          'weeklyStats': weeklyStats,
+          'timeSpent': totalTimeSpent,
+          'pagesRead': pagesReadUpUntilNow,
+          'finished': finish
         });
       } else {
         await booksRef.doc(_selectedBook).set({
+          'thumbnail': _selectedBookImage,
+          'title': _selectedBook,
+          'totalPage': totalPages,
           'readingProgress': readingProgress,
-          'dayOfWeek': _selectedDayOfWeek,
-          'pagesRead': pagesRead,
-          'timeSpent': timeSpentInMinutes,
-          'hourSpent': hourSpent,
+          'weeklyStats': weeklyStats,
+          'timeSpent': totalTimeSpent,
+          'pagesRead': pagesReadUpUntilNow,
+          'finished': finish
         });
       }
 

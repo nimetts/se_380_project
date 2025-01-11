@@ -26,14 +26,7 @@ class AuthService {
       final booksSnapshot = await booksRef.get();
 
       if (booksSnapshot.docs.isEmpty) {
-        await booksRef.add({
-          'title': 'Book 1',
-          'readingProgress': 0,
-        });
-        await booksRef.add({
-          'title': 'Book 2',
-          'readingProgress': 0,
-        });
+
       }
     } else {
       await docRef.set({
@@ -52,16 +45,6 @@ class AuthService {
             'readingTime': 0,
           },
         ],
-      });
-
-      final booksRef = docRef.collection('books');
-      await booksRef.add({
-        'title': 'Book 1',
-        'readingProgress': 0,
-      });
-      await booksRef.add({
-        'title': 'Book 2',
-        'readingProgress': 0,
       });
 
 
