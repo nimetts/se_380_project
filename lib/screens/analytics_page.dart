@@ -1,11 +1,59 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:se_380_project/screens/data_entry_page.dart';
 import '../Firebase/AuthService.dart';
 
-class AnalyticsPage extends StatelessWidget {
+class AnalyticsPage extends StatefulWidget {
+  @override
+  _AnalyticsPageState createState() => _AnalyticsPageState();
+}
+
+class _AnalyticsPageState extends State<AnalyticsPage> {
+  final _firestore = FirebaseFirestore.instance;
+  final AuthService _authService = AuthService();
+  List<Map<String, dynamic>> _favoriteBooks = [];
+  int _currentBookIndex = 0;
+  int a = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBooksFromFirestore();
+  }
+
+  Future<void> _loadBooksFromFirestore() async {
+    User? user = _authService.currentUser;
+    if (user != null) {
+      QuerySnapshot snapshot = await _firestore
+          .collection('bookStats')
+          .doc(user.uid)
+          .collection('books')
+          .get();
+
+      setState(() {
+        _favoriteBooks = snapshot.docs
+            .map((doc) => doc.data() as Map<String, dynamic>)
+            .toList();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_favoriteBooks.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Analytics'),
+          backgroundColor: Colors.deepPurple,
+        ),
+        body: Center(child: Text('No favorite books found.')),
+      );
+    }
+
+    final currentBook = _favoriteBooks[_currentBookIndex];
+    final bookTitle = currentBook['title'] ?? 'Unknown Title';
+    final bookThumbnail = currentBook['thumbnail'] ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -20,7 +68,7 @@ class AnalyticsPage extends StatelessWidget {
             children: [
               _buildHeader(),
               SizedBox(height: 16),
-              _buildReadingProgress(),
+              _buildReadingProgress(bookTitle, bookThumbnail),
               SizedBox(height: 16),
               _buildWeeklyReadingChart(),
             ],
@@ -34,28 +82,30 @@ class AnalyticsPage extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.deepPurple[100]
-      ),
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.deepPurple[100]),
       child: Column(
-        children:[
+        children: [
           Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatCard(Icons.local_fire_department, 'Current streak',
-                    AuthService.userStats["currentStreak"], Colors.red),
-                _buildStatCard(Icons.emoji_events, 'Best streak',
-                    AuthService.userStats["bestStreak"], Colors.deepOrange),
-              ],
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatCard(Icons.local_fire_department, 'Current streak',
+                  AuthService.userStats["currentStreak"] ?? 0, Colors.red),
+              _buildStatCard(Icons.emoji_events, 'Best streak',
+                  AuthService.userStats["bestStreak"] ?? 0, Colors.deepOrange),
+            ],
           ),
           SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatCard(Icons.book, 'Finished', AuthService.userStats["finishedBooks"],
+              _buildStatCard(
+                  Icons.book,
+                  'Finished',
+                 a,
                   Colors.deepPurpleAccent),
               _buildStatCard(Icons.timer, 'Reading time',
-                  0, Colors.blue),
+                  DataEntryPage().hourSpent, Colors.blue),
             ],
           ),
         ],
@@ -87,12 +137,19 @@ class AnalyticsPage extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: Colors.black54)),
           SizedBox(height: 4),
           Text(value.toString(),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
-  Widget _buildReadingProgress() {
+
+  Widget _buildReadingProgress(String bookTitle, String bookThumbnail) {
+    final currentBook = _favoriteBooks[_currentBookIndex];
+    double readingProgress = (currentBook["readingProgress"] ?? 0).toDouble();
+    if (readingProgress > 100 || readingProgress == 100) {
+      a++;
+    }
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -111,24 +168,76 @@ class AnalyticsPage extends StatelessWidget {
         children: [
           const Text('Reading Progress', style: TextStyle(fontSize: 18)),
           const SizedBox(height: 16),
-          LinearProgressIndicator(
-            value: AuthService.userStats["readingProgress"] / 100,
-            backgroundColor: Colors.grey[300],
-            color: Colors.deepPurple,
+          Row(
+            children: [
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  bookTitle,
+                  style: TextStyle(fontSize: 16),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Slider(
+            value: readingProgress.clamp(0.0, 100.0),
+            min: 0,
+            max: 100,
+            divisions: 100,
+            label: '${readingProgress.toStringAsFixed(0)}%',
+            onChanged: (double value) {
+              setState(() {
+                readingProgress = value.clamp(0.0, 100.0);
+                _updateBookProgress(currentBook, readingProgress);
+              });
+            },
           ),
           const SizedBox(height: 8),
-          Text('${AuthService.userStats["currentStreak"].toStringAsFixed(2)}% completed'),
+          Text('${readingProgress.toStringAsFixed(2)}% completed'),
+          SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _currentBookIndex > 0
+                  ? IconButton(
+                      icon: Icon(Icons.arrow_left),
+                      onPressed: () {
+                        setState(() {
+                          _currentBookIndex--;
+                        });
+                      },
+                    )
+                  : SizedBox(),
+              _currentBookIndex < _favoriteBooks.length - 1
+                  ? IconButton(
+                      icon: Icon(Icons.arrow_right),
+                      onPressed: () {
+                        setState(() {
+                          _currentBookIndex++;
+                        });
+                      },
+                    )
+                  : SizedBox(),
+            ],
+          ),
         ],
       ),
     );
   }
 
-
   Widget _buildWeeklyReadingChart() {
-    final gradientColors = [
-      Colors.deepPurple,
-      Colors.deepPurple.withOpacity(0.5),
-    ];
+    Map<String, List<Map<String, dynamic>>> dailyBooks = {};
+
+    // Organize books by the day they were read
+    for (var book in _favoriteBooks) {
+      String readDay = book["readDay"] ?? '';
+      if (!dailyBooks.containsKey(readDay)) {
+        dailyBooks[readDay] = [];
+      }
+      dailyBooks[readDay]!.add(book);
+    }
 
     return Container(
       padding: EdgeInsets.all(16),
@@ -137,7 +246,7 @@ class AnalyticsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.deepPurple,
+            color: Colors.deepPurple.withOpacity(0.5),
             blurRadius: 4,
             offset: Offset(2, 2),
           ),
@@ -146,55 +255,125 @@ class AnalyticsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Weekly Reading Stats', style: TextStyle(fontSize: 18)),
-          SizedBox(height: 16),
-          Container(
+          const Text('Weekly Reading Chart', style: TextStyle(fontSize: 18)),
+          SizedBox(
             height: 200,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: true),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (double value, TitleMeta meta) {
-                        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        return Text(daysOfWeek[value.toInt()]);
-                      },
+            child: Row(
+              children: List.generate(7, (dayIndex) {
+                String day = _getDayInitial(dayIndex);
+                List<Map<String, dynamic>> booksOnThisDay =
+                    dailyBooks[day] ?? [];
+
+                double totalProgress = 0;
+                int booksReadOnThisDay = booksOnThisDay.length;
+
+                // Calculate total progress for the day
+                for (var book in booksOnThisDay) {
+                  double progress = (book["readingProgress"] ?? 0).toDouble();
+                  totalProgress += progress;
+                }
+
+                double averageProgress = booksReadOnThisDay > 0
+                    ? totalProgress / booksReadOnThisDay
+                    : 0;
+
+                return Expanded(
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 4),
+                    height: 20,
+                    color: _getColorForDay(dayIndex),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: averageProgress / 100,
+                      child: Center(
+                        child: Text(
+                          day,
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                borderData: FlBorderData(show: true),
-                minX: 0,
-                maxX: 6,
-                minY: 0,
-                maxY: 10,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: AuthService.userStats["readingStats"].map<FlSpot>((stat) {
-                      final day = double.tryParse(stat['day'].toString()) ?? 0.0;
-                      final hours = double.tryParse(stat['hours'].toString()) ?? 0.0;
-                      return FlSpot(day, hours);
-                    }).toList(),
-                    isCurved: true,
-                    color: Colors.greenAccent,
-                    barWidth: 5,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: Colors.greenAccent,
-                    ),
+                );
+              }),
+            ),
+          ),
+          SizedBox(height: 16),
+          Column(
+            children: List.generate(7, (dayIndex) {
+              String day = _getDayInitial(dayIndex);
+              List<Map<String, dynamic>> booksOnThisDay = dailyBooks[day] ?? [];
+              int booksReadOnThisDay = booksOnThisDay.length;
+
+              return Row(
+                children: [
+                  Container(
+                    width: 20,
+                    height: 20,
+                    color: _getColorForDay(dayIndex),
+                  ),
+                  SizedBox(width: 8),
+                  Text(day, style: TextStyle(fontSize: 14)),
+                  SizedBox(width: 8),
+                  Text(
+                    '$booksReadOnThisDay books',
+                    style: TextStyle(fontSize: 14),
                   ),
                 ],
-              ),
-            ),
+              );
+            }),
           ),
         ],
       ),
     );
+  }
+
+  Color _getColorForDay(int index) {
+    List<Color> colors = [
+      Colors.red,
+      Colors.orange,
+      Colors.yellow,
+      Colors.green,
+      Colors.blue,
+      Colors.indigo,
+      Colors.purple,
+    ];
+    return colors[index % colors.length];
+  }
+
+  String _getDayInitial(int index) {
+    List<String> days = ["M", "T", "W", "T", "F", "S", "S"];
+    return days[index % days.length];
+  }
+
+  Future<void> _updateBookProgress(
+      Map<String, dynamic> book, double progress) async {
+    User? user = _authService.currentUser;
+
+    if (progress >= 100) {
+      await _firestore.collection('bookStats').doc(user?.uid).update({
+        'finishedBooks': FieldValue.increment(1),
+      });
+
+      await _firestore
+          .collection('bookStats')
+          .doc(user?.uid)
+          .collection('books')
+          .doc(book['id'])
+          .delete();
+
+      setState(() {
+        _favoriteBooks.remove(book);
+      });
+    } else {
+      await _firestore
+          .collection('bookStats')
+          .doc(user?.uid)
+          .collection('books')
+          .doc(book['id'])
+          .update({
+        'readingProgress': progress,
+      });
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:se_380_project/screens/analytics_page.dart';
+import 'package:se_380_project/screens/data_entry_page.dart';
 import 'package:se_380_project/screens/library_screen.dart';
 import 'favorites_screen.dart';
 import 'google_books_service.dart';
@@ -72,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _screens = [
       _OriginalHomeScreen(booksByCategory: widget.booksByCategory),
-      LibraryScreen(),
+      DataEntryPage(),
       FavoritesScreen(),
       AnalyticsPage()
     ];

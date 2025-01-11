@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -31,25 +30,24 @@ class _LoginScreenState extends State<LoginScreen> {
       if (userCredential == null) return;
       final User? user = userCredential.user;
       if (user == null) return;
+
       bool isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
-      if (isNewUser) {
+      if (!isNewUser) {
         await _authService.addUserStatsToFirestore(user);
+        await _authService.fetchUserStatsFromFirestore(user);
+        Map<String, List<Map<String, dynamic>>> booksByCategory = {};
+        var selectedCategories = AuthService.userStats["bookCategories"];
+        if (selectedCategories != null) {
+          for (String category in selectedCategories) {
+            booksByCategory[category] =
+            await _googleBooksService.fetchBooksByCategory(category);
+          }
+        }
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => CategoryScreen()),
         );
-      }  else {
-        await _authService.fetchUserStatsFromFirestore(user);
-        Map<String, List<Map<String, dynamic>>> booksByCategory = {};
-        var selectedCategories = AuthService.userStats["bookCategories"];
-        for (String category in selectedCategories) {
-          booksByCategory[category] =
-          await _googleBooksService.fetchBooksByCategory(category);
-        }
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen(booksByCategory: booksByCategory,)),
-        );
+
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -139,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => RegisterScreen()));
               },
-              child: Text("Don\'t have an account? Sing Up"),
+              child: Text("Don\'t have an account? register right now 8"),
             ),
           ],
         ),

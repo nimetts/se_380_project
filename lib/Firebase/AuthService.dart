@@ -21,12 +21,25 @@ class AuthService {
     final docRef = _firestore.collection('bookStats').doc(user.uid);
     final docSnapshot = await docRef.get();
 
-    if (!docSnapshot.exists) {
+    if (docSnapshot.exists) {
+      final booksRef = docRef.collection('books');
+      final booksSnapshot = await booksRef.get();
+
+      if (booksSnapshot.docs.isEmpty) {
+        await booksRef.add({
+          'title': 'Book 1',
+          'readingProgress': 0,
+        });
+        await booksRef.add({
+          'title': 'Book 2',
+          'readingProgress': 0,
+        });
+      }
+    } else {
       await docRef.set({
         'bestStreak': 0,
         'currentStreak': 0,
         'finishedBooks': 0,
-        'readingProgress': 0,
         'readingStats': [
           {
             'day': '2024-12-01',
@@ -40,6 +53,21 @@ class AuthService {
           },
         ],
       });
+
+      final booksRef = docRef.collection('books');
+      await booksRef.add({
+        'title': 'Book 1',
+        'readingProgress': 0,
+      });
+      await booksRef.add({
+        'title': 'Book 2',
+        'readingProgress': 0,
+      });
+
+
+      await docRef.set({
+        'finishedBooks': 0,
+      }, SetOptions(merge: true));
     }
   }
 
