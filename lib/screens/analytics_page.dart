@@ -33,12 +33,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             .collection('books')
             .get();
 
-        // Parse books from Firestore
         List<Map<String, dynamic>> books = snapshot.docs
             .map((doc) => doc.data() as Map<String, dynamic>)
             .toList();
 
-        // Initialize a map to hold pages read by day
         Map<String, int> pagesByDay = {};
 
         for (var book in books) {
@@ -46,8 +44,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           if (weeklyStats is Map<String, dynamic>) {
             weeklyStats.forEach((day, stats) {
               if (stats is Map<String, dynamic> && stats['page'] != null) {
-                int pageCount =
-                    (stats['page'] as num).toInt(); // Force conversion to int
+                int pageCount = (stats['page'] as num).toInt();
 
                 pagesByDay.update(
                   day,
@@ -59,7 +56,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           }
         }
 
-        // Update state with the processed data
         setState(() {
           _favoriteBooks = books;
           totalPagesByDay = pagesByDay;
@@ -77,7 +73,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           print('Total Pages by Day: $totalPagesByDay');
         });
       } catch (e) {
-        // Log the error for debugging
         print('Error loading books: $e');
       }
     }
@@ -281,11 +276,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
-  // -- MAPPING HELPERS --
-  // We'll assume Firestore keys are "Monday","Tuesday", etc.
-  // This function gives us the correct Firestore key based on index.
   String _getFirestoreDayKey(int index) {
-    // Adjust if your data uses different day names or starts on Sunday, etc.
     List<String> days = [
       'Monday',
       'Tuesday',
@@ -298,14 +289,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     return days[index % days.length];
   }
 
-  // This function is just for displaying a short label in the chart.
   String _getDayInitial(int index) {
     List<String> initials = ["M", "T", "W", "T", "F", "S", "S"];
     return initials[index % initials.length];
   }
 
   Widget _buildWeeklyReadingChart() {
-    // Find the maximum pages read on any day (to scale the bars)
     final maxPages = totalPagesByDay.values.isEmpty
         ? 1
         : totalPagesByDay.values.reduce((a, b) => a > b ? a : b);
@@ -332,31 +321,25 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             height: 200,
             child: Row(
               children: List.generate(7, (dayIndex) {
-                // Get the Firestore key for this day index
                 String firestoreKey = _getFirestoreDayKey(dayIndex);
 
-                // Retrieve the pages read from the mapped data
                 int pagesReadOnThisDay = totalPagesByDay[firestoreKey] ?? 0;
 
-                // Scale it based on the max pages found
                 double progressFactor =
                     (pagesReadOnThisDay / maxPages).clamp(0.0, 1.0);
 
-                // We can use a short label ("M", "T", "W", etc.) to display
                 String dayLabel = _getDayInitial(dayIndex);
 
                 return Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      // This is the bar column
                       Container(
                         width: 20,
-                        height: 150 * progressFactor, // scale up to 150 px
+                        height: 150 * progressFactor,
                         color: _getColorForDay(dayIndex),
                       ),
                       const SizedBox(height: 8),
-                      // This is the day label (e.g. "M", "T", etc.)
                       Text(
                         dayLabel,
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -368,7 +351,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             ),
           ),
           const SizedBox(height: 16),
-          // Legend / breakdown
           Column(
             children: List.generate(7, (dayIndex) {
               String firestoreKey = _getFirestoreDayKey(dayIndex);
