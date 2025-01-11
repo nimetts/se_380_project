@@ -137,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => RegisterScreen()));
               },
-              child: Text("Don\'t have an account? register right now 8"),
+              child: Text("Don\'t have an account? register right now"),
             ),
           ],
         ),
